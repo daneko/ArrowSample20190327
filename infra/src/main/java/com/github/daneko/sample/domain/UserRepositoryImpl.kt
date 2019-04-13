@@ -1,7 +1,6 @@
 package com.github.daneko.sample.domain
 
 import arrow.Kind
-import arrow.typeclasses.Monad
 import com.github.daneko.sample.infra.ApiCallOp
 import com.github.daneko.sample.infra.JsonPlaceholderServices
 import com.github.daneko.sample.infra.ResponseMapper
@@ -10,7 +9,7 @@ import com.github.daneko.sample.infra.ResponseMapper
 class UserRepositoryImpl<F>(
     private val api: JsonPlaceholderServices,
     private val op: ApiCallOp<F>
-) : UserRepository<F>, Monad<F> by op, ResponseMapper {
+) : UserRepository<F>, ResponseMapper {
 
     override fun findBy(id: UserId): Kind<F, User> = with(op) {
         api.getUser(id.raw).fetch()

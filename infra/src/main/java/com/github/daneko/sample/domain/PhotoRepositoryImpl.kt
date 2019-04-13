@@ -3,7 +3,6 @@ package com.github.daneko.sample.domain
 import arrow.Kind
 import arrow.effects.typeclasses.MonadDefer
 import arrow.effects.typeclasses.suspended.monaddefer.Fx
-import arrow.typeclasses.Monad
 import com.github.daneko.sample.infra.ApiCallOp
 import com.github.daneko.sample.infra.JsonPlaceholderServices
 import com.github.daneko.sample.infra.PhotoDao
@@ -14,7 +13,7 @@ class PhotoRepositoryImpl<F>(
     private val api: JsonPlaceholderServices,
     private val op: ApiCallOp<F>,
     private val dao: PhotoDao<F>
-) : PhotoRepository<F>, Monad<F> by op, Fx<F>, ResponseMapper {
+) : PhotoRepository<F>, Fx<F>, ResponseMapper {
     override fun monadDefer(): MonadDefer<F> = op
 
     override fun findByUserPhotos(id: UserId): Kind<F, List<Photo>> = with(this) {

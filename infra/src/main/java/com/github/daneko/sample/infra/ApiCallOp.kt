@@ -5,11 +5,8 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import arrow.data.EitherT
-import arrow.data.EitherTOf
-import arrow.data.value
 import arrow.effects.typeclasses.Async
 import arrow.integrations.retrofit.adapter.CallK
-import arrow.typeclasses.MonadThrow
 import okhttp3.HttpUrl
 import retrofit2.Response
 
@@ -17,9 +14,13 @@ import retrofit2.Response
 interface ApiCallOp<F> : Async<F> {
 
     fun <A> CallK<A>.fetch(): Kind<F, A> {
-        return this.fetchEitherT()
-            .unwrap(this@ApiCallOp,
-                { raiseError(it) })
+        return this.async(this@ApiCallOp)
+            .flatMap { response ->
+                response.toEither().fold(
+                    ifLeft = { it.raiseError<A>() },
+                    ifRight = { just(it) }
+                )
+            }
     }
 
     fun <A> CallK<A>.fetchEitherT(): EitherT<F, ResponseError, A> {
@@ -47,22 +48,4 @@ sealed class ResponseError(requestUrl: HttpUrl) : Exception() {
     data class ClientError(val url: HttpUrl, val code: Int) : ResponseError(url)
     data class ServerError(val url: HttpUrl, val code: Int) : ResponseError(url)
     data class UnknownError(val url: HttpUrl) : ResponseError(url)
-}
-
-/**
- * A:Throwableの制約までもたせるなら、l = FF.raiseError(it) もできる…
- */
-private fun <F, A, B> EitherTOf<F, A, B>.unwrap(
-    FF: MonadThrow<F>,
-    l: (A) -> Kind<F, B>,
-    r: (B) -> Kind<F, B> = FF::just
-): Kind<F, B> = with(FF) {
-
-    this@unwrap.value()
-        .flatMap { either ->
-            either.fold(
-                ifLeft = l,
-                ifRight = r
-            )
-        }
 }
